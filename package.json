@@ -1,0 +1,31 @@
+{
+  "name": "@apparently/query",
+  "description": "Simple and small data fetching library for SolidJS. Inspired by SWR.",
+  "authors": "Patrik Smělý (SogoCZE)",
+  "author": "Apparently Studio",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "npm run build:js && npm run build:types",
+    "build:js": "esbuild --minify src/index.tsx --outdir=dist",
+    "build:types": "tsc"
+  },
+  "keywords": [
+    "SolidJS",
+    "Data",
+    "Query",
+    "JavaScript",
+    "TypeScript",
+    "Apparently"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/apparently-studio/query/issues"
+  },
+  "homepage": "https://github.com/apparently-studio/query#readme"
+}
