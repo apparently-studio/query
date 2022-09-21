@@ -42,22 +42,21 @@ async function fetchData(path: string, cache: StringKeydObject, fetcher: Fetcher
         cache[path] = { data: newCache, error: null };
     } catch (e) {
         cache[path] = { data: null, error: e };
-        console.error(e);
     }
 }
 
-export function useQuery(path: string): Accessor<CacheItem> {
+export function useQuery(path: string) {
     const { fetcher, cache } = useQueryContext();
-    const tracked = () => cache[path];
+    const data = () => cache[path].data;
+    const error = () => cache[path].error;
+    const fatchDataCall = () => fetchData(path, cache, fetcher);
 
-    fetchData(path, cache, fetcher);
-    const anonymFetchdata = () => fetchData(path, cache, fetcher);
+    fatchDataCall();
 
+    onMount(() => window.addEventListener("focus", fatchDataCall));
+    onCleanup(() => window.removeEventListener("focus", fatchDataCall));
 
-    onMount(() => window.addEventListener("focus", anonymFetchdata));
-    onCleanup(() => window.removeEventListener("focus", anonymFetchdata));
-
-    return tracked;
+    return { data, error };
 }
 
 export function useMutate() {
