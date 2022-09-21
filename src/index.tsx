@@ -46,7 +46,9 @@ async function fetchData(path: string, cache: StringKeydObject, fetcher: Fetcher
     }
 }
 
-export function useQuery<T>(path: string): { data: Accessor<T>, error: Accessor<unknown> } {
+export function useQuery<T>(path?: string|null): { data: Accessor<T|null>, error: Accessor<unknown> } {
+    if (!path) return { data: () => null, error: () => null };
+    
     const { fetcher, cache } = useQueryContext();
     const data = () => cache[path]?.data as T;
     const error = () => cache[path]?.error;
