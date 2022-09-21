@@ -21,7 +21,7 @@ interface QueryData {
 
 const QueryContext = createContext<QueryData>();
 
-export function useSWWRContext() {
+export function useQueryContext() {
     return useContext(QueryContext)!;
 }
 
@@ -47,7 +47,7 @@ async function fetchData(path: string, cache: StringKeydObject, fetcher: Fetcher
 }
 
 export function useQuery(path: string): Accessor<CacheItem> {
-    const { fetcher, cache } = useSWWRContext();
+    const { fetcher, cache } = useQueryContext();
     const tracked = () => cache[path];
 
     fetchData(path, cache, fetcher);
@@ -61,7 +61,7 @@ export function useQuery(path: string): Accessor<CacheItem> {
 }
 
 export function useMutate() {
-    const { fetcher, cache } = useSWWRContext();
+    const { fetcher, cache } = useQueryContext();
 
     return (path: string, data?: CacheItem) => {
         if (data) {
