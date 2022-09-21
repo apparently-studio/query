@@ -48,8 +48,8 @@ async function fetchData(path: string, cache: StringKeydObject, fetcher: Fetcher
 
 export function useQuery<T>(path: string): { data: Accessor<T>, error: Accessor<unknown> } {
     const { fetcher, cache } = useQueryContext();
-    const data = () => cache[path].data as T;
-    const error = () => cache[path].error;
+    const data = () => cache[path]?.data as T;
+    const error = () => cache[path]?.error;
     const fatchDataCall = () => fetchData(path, cache, fetcher);
 
     fatchDataCall();
@@ -64,7 +64,7 @@ export function useMutate<T>() {
     const { fetcher, cache } = useQueryContext();
 
     return (path: string, data?: T) => {
-        if (data) {
+        if (data && cache[path]) {
             cache[path].data = data;
             return;
         }
