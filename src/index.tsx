@@ -63,7 +63,7 @@ export function useQuery<T>(path: string): { data: Accessor<T>, error: Accessor<
 export function useMutate<T>() {
     const { fetcher, cache } = useQueryContext();
 
-    return (path: string, data: T) => {
+    return (path: string, data?: T) => {
         if (data) {
             cache[path].data = data;
             return;
