@@ -3,9 +3,9 @@
   "description": "Simple and small data fetching library for SolidJS. Inspired by SWR.",
   "authors": "Patrik Smělý (SogoCZE), Petr Strolený (Petmar)",
   "author": "Apparently Studio",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
