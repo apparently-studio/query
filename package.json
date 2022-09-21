@@ -23,9 +23,6 @@
   "peerDependencies": {
     "solid-js": "^1.4.7"
   },
-  "dependencies": {
-    "solid-js": "^1.4.7"
-  },
   "keywords": [
     "SolidJS",
     "Data",
