@@ -3,9 +3,10 @@ import type { ParentComponent, Accessor } from "solid-js";
 import { createMutable } from "solid-js/store";
 
 type Fetcher = (...args: any[]) => Promise<unknown>;
+
 interface CacheItem {
-    data: any
-    error: any
+    data: unknown
+    error: unknown
 }
 
 type StringKeydObject = { [key: string]: CacheItem };
@@ -45,9 +46,9 @@ async function fetchData(path: string, cache: StringKeydObject, fetcher: Fetcher
     }
 }
 
-export function useQuery(path: string) {
+export function useQuery<T>(path: string): { data: Accessor<T>, error: Accessor<unknown> } {
     const { fetcher, cache } = useQueryContext();
-    const data = () => cache[path].data;
+    const data = () => cache[path].data as T;
     const error = () => cache[path].error;
     const fatchDataCall = () => fetchData(path, cache, fetcher);
 
@@ -59,12 +60,12 @@ export function useQuery(path: string) {
     return { data, error };
 }
 
-export function useMutate() {
+export function useMutate<T>() {
     const { fetcher, cache } = useQueryContext();
 
-    return (path: string, data?: CacheItem) => {
+    return (path: string, data: T) => {
         if (data) {
-            cache[path] = data;
+            cache[path].data = data;
             return;
         }
 
