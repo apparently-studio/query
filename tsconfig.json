@@ -1,18 +1,14 @@
 {
     "compilerOptions": {
-        "strict": true,
         "declaration": true,
-        "emitDeclarationOnly": true,
-        "allowJs": false,
         "target": "esnext",
-        "module": "esnext",
+        "newLine": "LF",
         "moduleResolution": "node",
-        "allowSyntheticDefaultImports": true,
-        "esModuleInterop": true,
-        "jsx": "react-jsx",
+        "strict": true,
+        "jsx": "preserve",
         "jsxImportSource": "solid-js",
         "outDir": "./dist",
-        "isolatedModules": true
+        "module": "esnext"
     },
     "include": [
         "./src"
