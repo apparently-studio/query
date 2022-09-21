@@ -38,5 +38,8 @@
   "bugs": {
     "url": "https://github.com/apparently-studio/query/issues"
   },
-  "homepage": "https://github.com/apparently-studio/query#readme"
+  "homepage": "https://github.com/apparently-studio/query#readme",
+  "dependencies": {
+    "solid-js": "^1.5.5"
+  }
 }
