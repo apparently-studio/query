@@ -46,18 +46,19 @@ async function fetchData(path: string, cache: StringKeydObject, fetcher: Fetcher
     }
 }
 
-export function useQuery<T>(path?: string|null): { data: Accessor<T|null>, error: Accessor<unknown> } {
+export function useQuery<T>(path?: string|null, ignoreFocusChange?: Accessor<boolean>): { data: Accessor<T|null>, error: Accessor<unknown> } {
     if (!path) return { data: () => null, error: () => null };
     
     const { fetcher, cache } = useQueryContext();
     const data = () => cache[path]?.data as T;
     const error = () => cache[path]?.error;
-    const fatchDataCall = () => fetchData(path, cache, fetcher);
+    const fetchDataCall = () => (ignoreFocusChange == undefined || ignoreFocusChange() == false) && fetchData(path, cache, fetcher);
 
-    fatchDataCall();
-
-    onMount(() => window.addEventListener("focus", fatchDataCall));
-    onCleanup(() => window.removeEventListener("focus", fatchDataCall));
+    onMount(() => {
+        fetchData(path, cache, fetcher);
+        window.addEventListener("focus", () => fetchDataCall());
+    });
+    onCleanup(() => window.removeEventListener("focus", () => fetchDataCall()));
 
     return { data, error };
 }
