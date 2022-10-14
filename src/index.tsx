@@ -1,5 +1,5 @@
-import { createContext, onMount, onCleanup, useContext, createEffect, createResource, Resource, Signal, InitializedResourceReturn, ResourceSource } from "solid-js";
-import type { ParentComponent, Accessor } from "solid-js";
+import { createContext, onMount, onCleanup, useContext, createResource } from "solid-js";
+import type { ParentComponent, Accessor, InitializedResourceReturn, Signal } from "solid-js";
 import { createMutable } from "solid-js/store";
 
 type Fetcher = (...args: any[]) => Promise<any>;
