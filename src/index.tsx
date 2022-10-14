@@ -1,15 +1,10 @@
-import { createContext, onMount, onCleanup, useContext } from "solid-js";
+import { createContext, onMount, onCleanup, useContext, createEffect, createResource, Resource, Signal, InitializedResourceReturn, ResourceSource } from "solid-js";
 import type { ParentComponent, Accessor } from "solid-js";
 import { createMutable } from "solid-js/store";
 
-type Fetcher = (...args: any[]) => Promise<unknown>;
+type Fetcher = (...args: any[]) => Promise<any>;
 
-interface CacheItem {
-    data: unknown
-    error: unknown
-}
-
-type StringKeydObject = { [key: string]: CacheItem };
+type Cache = { [key: string]: any };
 
 interface QueryConfig {
     fetcher: Fetcher
@@ -17,7 +12,7 @@ interface QueryConfig {
 
 interface QueryData {
     fetcher: Fetcher
-    cache: StringKeydObject
+    cache: Cache
 }
 
 const QueryContext = createContext<QueryData>();
@@ -27,7 +22,7 @@ export function useQueryContext() {
 }
 
 export const QueryConfig: ParentComponent<QueryConfig> = (props) => {
-    const cache = createMutable<StringKeydObject>({});
+    const cache = createMutable<Cache>({});
 
     return (
         <QueryContext.Provider value={{ fetcher: props.fetcher, cache }}>
@@ -36,31 +31,40 @@ export const QueryConfig: ParentComponent<QueryConfig> = (props) => {
     );
 }
 
-async function fetchData(path: string, cache: StringKeydObject, fetcher: Fetcher) {
-    try {
-        const res = fetcher(path);
-        const newCache = await res;
-        cache[path] = { data: newCache, error: null };
-    } catch (e) {
-        cache[path] = { data: null, error: e };
-    }
-}
-
-export function useQuery<T>(path?: string|null): { data: Accessor<T|null>, error: Accessor<unknown> } {
-    if (!path) return { data: () => null, error: () => null };
-    
+export function useQuery<T>(getKey: Accessor<string | null>, initialValue?: T): InitializedResourceReturn<T> {
     const { fetcher, cache } = useQueryContext();
-    const data = () => cache[path]?.data as T;
-    const error = () => cache[path]?.error;
-    const fetchDataCall = () => fetchData(path, cache, fetcher);
-    
-    fetchDataCall();
-    onMount(() => {
-        window.addEventListener("focus", () => fetchDataCall());
-    });
-    onCleanup(() => window.removeEventListener("focus", () => fetchDataCall()));
 
-    return { data, error };
+    const cacheStorage = (initialValue: T) => {
+        if (!cache.hasOwnProperty(getKey()!)) {
+            cache[getKey()!] = initialValue;
+        }
+
+        return [
+            () => cache[getKey()!],
+            (newValue: Accessor<T>) => {
+                cache[getKey()!] = newValue();
+                return cache[getKey()!];
+            }
+        ] as Signal<T>;
+    }
+
+    const cacheFetcher = async (key: string) => {
+        if (cache.hasOwnProperty(key)) {
+            fetcher(key);
+            return cache[key];
+        }
+
+        return await fetcher(key);
+    }
+
+    // @ts-ignore
+    // TODO: opravit type problem.
+    const [resource, { refetch, mutate }] = createResource<T>(getKey, cacheFetcher, { storage: cacheStorage, initialValue });
+
+    onMount(() => window.addEventListener("focus", refetch));
+    onCleanup(() => window.removeEventListener("focus", refetch));
+
+    return [resource, { refetch, mutate }];
 }
 
 export function useMutate<T>() {
@@ -72,6 +76,8 @@ export function useMutate<T>() {
             return;
         }
 
-        fetchData(path, cache, fetcher);
+        (async () => {
+            cache[path] = await fetcher(path);
+        })();
     }
 }
