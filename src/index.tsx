@@ -77,7 +77,10 @@ export function useQuery<T>(getKey: Accessor<string | null>, initialValue?: T): 
 
     const cacheFetcher = async (key: string) => {
         if (cache.hasOwnProperty(key)) {
-            fetcher(key);
+            (async () => {
+                cache[key] = await fetcher(key);
+            })();
+
             return cache[key];
         }
 
