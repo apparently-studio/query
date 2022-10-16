@@ -31,6 +31,33 @@ export const QueryConfig: ParentComponent<QueryConfig> = (props) => {
     );
 }
 
+export function useCache() {
+    const { fetcher, cache } = useQueryContext();
+
+    return {
+        remove(keyOrPredicate: string | ((key: string) => boolean)) {
+            if (typeof keyOrPredicate == "function") {
+                for (const key in cache) {
+                    if (!keyOrPredicate(key)) continue;
+                    this.remove(key);
+                }
+
+                return;
+            }
+
+            delete cache[keyOrPredicate];
+        },
+
+        set(key: string, data: unknown) {
+            cache[key] = data;
+        },
+
+        get(key: string) {
+            return cache[key];
+        }
+    };
+}
+
 export function useQuery<T>(getKey: Accessor<string | null>, initialValue?: T): InitializedResourceReturn<T> {
     const { fetcher, cache } = useQueryContext();
 
