@@ -1,10 +1,10 @@
-import { createContext, onMount, onCleanup, useContext, createResource } from "solid-js";
+import { createContext, onMount, onCleanup, useContext, createResource, InitializedResource, Setter, ResourceReturn, createSignal, createEffect, on } from "solid-js";
 import type { ParentComponent, Accessor, InitializedResourceReturn, Signal } from "solid-js";
-import { createMutable } from "solid-js/store";
+import { ReactiveMap } from "@solid-primitives/map";
+// @ts-ignore
+import stableHash from "stable-hash";
 
 type Fetcher = (...args: any[]) => Promise<any>;
-
-type Cache = { [key: string]: any };
 
 interface QueryConfig {
     fetcher: Fetcher
@@ -12,17 +12,34 @@ interface QueryConfig {
 
 interface QueryData {
     fetcher: Fetcher
-    cache: Cache
+    cache: ReactiveMapWithStableHash<string, unknown>
 }
 
 const QueryContext = createContext<QueryData>();
+
+class ReactiveMapWithStableHash<K, V> extends ReactiveMap<K, V> {
+    set(key: K, value: V): this {
+        if (stableHash(super.get(key)) === stableHash(value)) {
+            return this;
+        }
+
+        return super.set(key, value);
+    }
+}
+
+// TODO:
+// - deduplikace
+// - infinite query
+// - error retry
+// - isRefething 
+// - refetch on reconnect
 
 export function useQueryContext() {
     return useContext(QueryContext)!;
 }
 
 export const QueryConfig: ParentComponent<QueryConfig> = (props) => {
-    const cache = createMutable<Cache>({});
+    const cache = new ReactiveMapWithStableHash<string, unknown>(); // Tady možná je trochu overheat, že has atd je reaktivní.
 
     return (
         <QueryContext.Provider value={{ fetcher: props.fetcher, cache }}>
@@ -33,55 +50,41 @@ export const QueryConfig: ParentComponent<QueryConfig> = (props) => {
 
 export function useCache() {
     const { fetcher, cache } = useQueryContext();
-
-    return {
-        remove(keyOrPredicate: string | ((key: string) => boolean)) {
-            if (typeof keyOrPredicate == "function") {
-                for (const key in cache) {
-                    if (!keyOrPredicate(key)) continue;
-                    this.remove(key);
-                }
-
-                return;
-            }
-
-            delete cache[keyOrPredicate];
-        },
-
-        set(key: string, data: unknown) {
-            cache[key] = data;
-        },
-
-        get(key: string) {
-            return cache[key];
-        }
-    };
+    return cache;
 }
 
-export function useQuery<T>(getKey: Accessor<string | null>, initialValue?: T): InitializedResourceReturn<T> {
+export function useMutate<T>() {
     const { fetcher, cache } = useQueryContext();
+    return async (key: string, data?: T) => { cache.set(key, data ? data : await fetcher(key)); }
+}
+
+export function useQuery<T>(getKey: Accessor<string | null>, initialValue?: T): [InitializedResource<T>, { mutate: (data?: T) => Promise<void> }] {
+    const { fetcher, cache } = useQueryContext();
+    const globalMutate = useMutate<T>();
+
+    const mutate = (data?: T) => globalMutate(getKey()!, data);
+    const refetch = () => mutate();
 
     const cacheStorage = (initialValue: T) => {
-        if (!cache.hasOwnProperty(getKey()!)) {
-            cache[getKey()!] = initialValue;
+        const key = getKey()!;
+
+        if (!cache.has(key) && initialValue) {
+            cache.set(key, initialValue);
         }
 
         return [
-            () => cache[getKey()!],
+            () => cache.get(key),
             (newValue: Accessor<T>) => {
-                cache[getKey()!] = newValue();
-                return cache[getKey()!];
+                cache.set(key, newValue());
+                return cache.get(key);
             }
         ] as Signal<T>;
     }
 
     const cacheFetcher = async (key: string) => {
-        if (cache.hasOwnProperty(key)) {
-            (async () => {
-                cache[key] = await fetcher(key);
-            })();
-
-            return cache[key];
+        if (cache.has(key)) {
+            (async () => cache.set(key, await fetcher(key)))();
+            return cache.get(key);
         }
 
         return await fetcher(key);
@@ -89,25 +92,10 @@ export function useQuery<T>(getKey: Accessor<string | null>, initialValue?: T): 
 
     // @ts-ignore
     // TODO: opravit type problem.
-    const [resource, { refetch, mutate }] = createResource<T>(getKey, cacheFetcher, { storage: cacheStorage, initialValue });
+    const [resource] = createResource<T>(getKey, cacheFetcher, { storage: cacheStorage, initialValue });
 
     onMount(() => window.addEventListener("focus", refetch));
     onCleanup(() => window.removeEventListener("focus", refetch));
 
-    return [resource, { refetch, mutate }];
-}
-
-export function useMutate<T>() {
-    const { fetcher, cache } = useQueryContext();
-
-    return (path: string, data?: T) => {
-        if (data) {
-            cache[path] = { data, error: null };
-            return;
-        }
-
-        (async () => {
-            cache[path] = await fetcher(path);
-        })();
-    }
+    return [resource, { mutate }];
 }
