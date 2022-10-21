@@ -1,9 +1,8 @@
-import { createContext, onMount, onCleanup, useContext, createResource, InitializedResource, Setter, ResourceReturn, createSignal, createEffect, on, untrack } from "solid-js";
-import type { ParentComponent, Accessor, InitializedResourceReturn, Signal } from "solid-js";
+import { createContext, onMount, onCleanup, useContext, createResource, InitializedResource } from "solid-js";
+import type { ParentComponent, Accessor, Signal } from "solid-js";
 import { ReactiveMap } from "@solid-primitives/map";
 // @ts-ignore
 import stableHash from "stable-hash";
-import { format } from "path";
 
 type Fetcher = (...args: any[]) => Promise<any>;
 
