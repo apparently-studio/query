@@ -1,8 +1,9 @@
-import { createContext, onMount, onCleanup, useContext, createResource, InitializedResource, Setter, ResourceReturn, createSignal, createEffect, on } from "solid-js";
+import { createContext, onMount, onCleanup, useContext, createResource, InitializedResource, Setter, ResourceReturn, createSignal, createEffect, on, untrack } from "solid-js";
 import type { ParentComponent, Accessor, InitializedResourceReturn, Signal } from "solid-js";
 import { ReactiveMap } from "@solid-primitives/map";
 // @ts-ignore
 import stableHash from "stable-hash";
+import { format } from "path";
 
 type Fetcher = (...args: any[]) => Promise<any>;
 
@@ -29,7 +30,7 @@ class ReactiveMapWithStableHash<K, V> extends ReactiveMap<K, V> {
 
 // TODO:
 // - deduplikace
-// - infinite query
+// - infiniteQuery (v postupu)
 // - error retry
 // - isRefething 
 // - refetch on reconnect
@@ -99,3 +100,85 @@ export function useQuery<T>(getKey: Accessor<string | null>, initialValue?: T): 
 
     return [resource, { mutate }];
 }
+
+// TODO: caching, suspense, klasický nekonečný scroll (bez deloadingu), vyčistit kód...
+
+//type UseInfiniteQueryGetKey<T> = (pageIndex: number, previousPageData: T | null) => string;
+//type UseInfiniteQuery<T> = [InitializedResource<T[][]>, { setSize: Setter<number>, size: Accessor<number>, loadingNextPage: Accessor<boolean> }];
+
+// export function useInfiniteQuery<T>(getKey: UseInfiniteQueryGetKey<T>, initialValue?: T[]) {
+//     const { fetcher, cache } = useQueryContext();
+
+//     const [size, setSize] = createSignal(0);
+//     const [loadingPage, setLoadingPage] = createSignal(false);
+
+//     const [data, setData] = createSignal<T[]>([]);
+
+//     let max = 0;
+
+//     onMount(async () => setData(await fetcher(getKey(0, null))));
+
+//     createEffect(() => {
+//         if (data().length > max) {
+//             max = data().length;
+//         }
+
+//         const _size = untrack(size);
+
+//         console.log("Max loaded sofar:", max, "Size:", _size);
+//     });
+
+//     async function forward() {
+//         if (loadingPage()) {
+//             return;
+//         }
+//         setLoadingPage(true);
+
+//         let _data = untrack(data);
+
+//         const newSize = size() + 1;
+//         const fetchedData = await fetcher(getKey(newSize, null));
+
+//         let newData = [..._data, ...fetchedData];
+
+//         if (newSize % 4 == 0) {
+//             newData = newData.slice(newData.length - 200, newData.length);
+//         }
+
+//         setData(newData);
+//         setSize(newSize);
+//         setLoadingPage(false);
+//     }
+
+//     async function back() {
+//         if (loadingPage()) {
+//             return;
+//         }
+
+//         if (size() <= 3) {
+//             if (size() != 0) {
+//                 setSize(0);
+//             }
+
+//             return;
+//         }
+
+//         setLoadingPage(true);
+//         let _data = untrack(data);
+
+//         const newSize = size() - 1;
+//         const fetchedData = await fetcher(getKey(newSize - 3, null));
+
+//         let newData = [...fetchedData, ..._data];
+
+//         if (newSize % 4 == 0) {
+//             newData = newData.slice(0, newData.length - 200);
+//         }
+
+//         setData(newData);
+//         setSize(newSize);
+//         setLoadingPage(false);
+//     }
+
+//     return [data, { back, forward }];
+// }
