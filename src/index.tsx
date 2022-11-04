@@ -94,7 +94,7 @@ export function useQuery<T>(getKey: Accessor<string | null>, initialValue?: T): 
     // TODO: opravit type problem.
     const [resource] = createResource<T>(getKey, cacheFetcher, { storage: cacheStorage, initialValue });
 
-    if (typeof window !== undefined) {
+    if (typeof window !== "undefined") {
         onMount(() => window.addEventListener("focus", refetch));
         onCleanup(() => window.removeEventListener("focus", refetch));
     }
