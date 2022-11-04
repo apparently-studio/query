@@ -49,7 +49,7 @@ export const QueryConfig: ParentComponent<QueryConfig> = (props) => {
 }
 
 export function useCache() {
-    const { fetcher, cache } = useQueryContext();
+    const { cache } = useQueryContext();
     return cache;
 }
 
@@ -94,8 +94,10 @@ export function useQuery<T>(getKey: Accessor<string | null>, initialValue?: T): 
     // TODO: opravit type problem.
     const [resource] = createResource<T>(getKey, cacheFetcher, { storage: cacheStorage, initialValue });
 
-    onMount(() => window.addEventListener("focus", refetch));
-    onCleanup(() => window.removeEventListener("focus", refetch));
+    if (typeof window !== undefined) {
+        onMount(() => window.addEventListener("focus", refetch));
+        onCleanup(() => window.removeEventListener("focus", refetch));
+    }
 
     return [resource, { mutate }];
 }
